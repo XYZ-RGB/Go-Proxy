@@ -7,6 +7,8 @@ import (
 	"net"
 )
 
+var Sessions = make(map[string]*Session)
+
 type Session struct {
 	net.Conn
 	io.Reader
@@ -14,6 +16,11 @@ type Session struct {
 	state     ConnectionState
 	direction ConnectionDirection
 	uuid      uuid.UUID
+}
+
+func (s Session) close() {
+	Sessions[s.uuid.String()] = nil
+	s.Conn.Close()
 }
 
 func (s Session) SendPacket(packet Packet) {
@@ -29,11 +36,12 @@ func (s Session) SendPacket(packet Packet) {
 
 func HandleConnection(conn net.Conn) {
 	session := Session{conn, conn, conn, Handshake, Serverbound, uuid.New()}
+	Sessions[session.uuid.String()] = &session
 	for {
 		packet, id, len := getPacket(session)
 		if packet == nil { //todo
 			if session.state != Play {
-				conn.Close()
+				session.close()
 				break
 			}
 
@@ -44,7 +52,7 @@ func HandleConnection(conn net.Conn) {
 			buf := make([]byte, len-1)
 			_, err := io.ReadFull(session.Reader, buf[:])
 			if err != nil {
-				conn.Close()
+				session.close()
 				break
 			}
 		}
@@ -57,7 +65,7 @@ func HandleConnection(conn net.Conn) {
 
 				if handshake.ProtocolVersion != 47 && handshake.NextState == 2 {
 					println("Wrong protocol version: ", handshake.ProtocolVersion)
-					conn.Close()
+					session.close()
 					break
 				}
 
@@ -145,11 +153,7 @@ func HandleConnection(conn net.Conn) {
 
 			break
 		case Play:
-			if id == 0x00 {
-				keepAlive := *packet.(*KeepAlive)
-				keepAlive.Read(session)
-				session.SendPacket(&KeepAlive{KeepAliveId: keepAlive.KeepAliveId})
-			} else if id == 0x01 {
+			if id == 0x01 {
 				chatMessage := *packet.(*ClientChatMessage)
 				chatMessage.Read(session)
 				println("Chat: " + chatMessage.Message)

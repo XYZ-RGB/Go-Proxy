@@ -3,6 +3,7 @@ package main
 import (
 	"Proxy/protocol"
 	"net"
+	"time"
 )
 
 func main() {
@@ -37,6 +38,14 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	go func() {
+		for range time.Tick(time.Second * 5) {
+			for _, session := range protocol.Sessions {
+				session.SendPacket(&protocol.KeepAlive{KeepAliveId: protocol.VarInt(time.Now().Unix())})
+			}
+		}
+	}()
 
 	for {
 		conn, err := listen.Accept()
