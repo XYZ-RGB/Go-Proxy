@@ -41,7 +41,13 @@ func main() {
 
 	go func() {
 		for range time.Tick(time.Second * 5) {
+			if len(protocol.Sessions) <= 0 {
+				continue
+			}
 			for _, session := range protocol.Sessions {
+				if session == nil || session.State != protocol.Play {
+					continue
+				}
 				session.SendPacket(&protocol.KeepAlive{KeepAliveId: protocol.VarInt(time.Now().Unix())})
 			}
 		}

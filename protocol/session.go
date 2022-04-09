@@ -13,13 +13,13 @@ type Session struct {
 	net.Conn
 	io.Reader
 	io.Writer
-	state     ConnectionState
-	direction ConnectionDirection
-	uuid      uuid.UUID
+	State     ConnectionState
+	Direction ConnectionDirection
+	Uuid      uuid.UUID
 }
 
 func (s Session) close() {
-	Sessions[s.uuid.String()] = nil
+	Sessions[s.Uuid.String()] = nil
 	s.Conn.Close()
 }
 
@@ -36,11 +36,11 @@ func (s Session) SendPacket(packet Packet) {
 
 func HandleConnection(conn net.Conn) {
 	session := Session{conn, conn, conn, Handshake, Serverbound, uuid.New()}
-	Sessions[session.uuid.String()] = &session
+	Sessions[session.Uuid.String()] = &session
 	for {
 		packet, id, len := getPacket(session)
 		if packet == nil { //todo
-			if session.state != Play {
+			if session.State != Play {
 				session.close()
 				break
 			}
@@ -57,7 +57,7 @@ func HandleConnection(conn net.Conn) {
 			}
 		}
 
-		switch session.state {
+		switch session.State {
 		case Handshake:
 			if id == 0x00 {
 				handshake := *packet.(*HandshakePacket)
@@ -70,9 +70,9 @@ func HandleConnection(conn net.Conn) {
 				}
 
 				if handshake.NextState == 1 {
-					session.state = Status
+					session.State = Status
 				} else {
-					session.state = Login
+					session.State = Login
 				}
 			}
 			break
@@ -103,7 +103,7 @@ func HandleConnection(conn net.Conn) {
 				login.Read(session)
 				println("Nick: " + login.Name)
 				session.SendPacket(&ServerLoginSuccess{
-					Uuid: String(session.uuid.String()),
+					Uuid: String(session.Uuid.String()),
 					Name: login.Name,
 				})
 
@@ -148,7 +148,7 @@ func HandleConnection(conn net.Conn) {
 					Position: 0,
 				})
 
-				session.state = Play
+				session.State = Play
 			}
 
 			break
@@ -173,5 +173,5 @@ func getPacket(session Session) (Packet, VarInt, VarInt) {
 	var packetId VarInt
 	packetId.Read(session)
 
-	return GetNewPacket(Packets[session.direction][session.state][packetId]), packetId, packetLen
+	return GetNewPacket(Packets[session.Direction][session.State][packetId]), packetId, packetLen
 }
