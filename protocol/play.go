@@ -111,7 +111,7 @@ func (s ServerPlayerPosAndLook) Id() VarInt {
 }
 
 type ServerChatMessage struct {
-	Message Msg
+	Message  Msg
 	Position Byte
 }
 
@@ -126,4 +126,36 @@ func (s *ServerChatMessage) Read(session Session) {
 
 func (s ServerChatMessage) Id() VarInt {
 	return 0x02
+}
+
+type ClientChatMessage struct {
+	Message String
+}
+
+func (c ClientChatMessage) Write(buffer *bytes.Buffer) {
+	//todo
+}
+
+func (c *ClientChatMessage) Read(session Session) {
+	c.Message.Read(session)
+}
+
+func (c ClientChatMessage) Id() VarInt {
+	return 0x01
+}
+
+type KeepAlive struct {
+	KeepAliveId VarInt
+}
+
+func (k KeepAlive) Write(buffer *bytes.Buffer) {
+	k.KeepAliveId.Write(buffer)
+}
+
+func (k *KeepAlive) Read(session Session) {
+	k.KeepAliveId.Read(session)
+}
+
+func (k KeepAlive) Id() VarInt {
+	return 0x00
 }

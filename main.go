@@ -16,10 +16,16 @@ func main() {
 		protocol.ClientStatusRequest{}.Id(): &protocol.ClientStatusRequest{},
 	}
 
+	playMap := map[protocol.VarInt]protocol.Packet{
+		protocol.ClientChatMessage{}.Id(): &protocol.ClientChatMessage{},
+		protocol.KeepAlive{}.Id():         &protocol.KeepAlive{},
+	}
+
 	serverBoundMap := map[protocol.ConnectionState]map[protocol.VarInt]protocol.Packet{
 		protocol.Handshake: handshakeMap,
 		protocol.Login:     loginMap,
 		protocol.Status:    statusMap,
+		protocol.Play:      playMap,
 	}
 
 	protocol.Packets = map[protocol.ConnectionDirection]map[protocol.ConnectionState]map[protocol.VarInt]protocol.Packet{

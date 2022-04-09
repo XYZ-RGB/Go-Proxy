@@ -37,7 +37,7 @@ func HandleConnection(conn net.Conn) {
 				break
 			}
 
-			if len-1 <= 0{
+			if len-1 <= 0 {
 				continue
 			}
 
@@ -134,7 +134,7 @@ func HandleConnection(conn net.Conn) {
 				})
 
 				session.SendPacket(&ServerChatMessage{
-					Message:  Msg{
+					Message: Msg{
 						Text: "§aHello, world!",
 					},
 					Position: 0,
@@ -143,6 +143,17 @@ func HandleConnection(conn net.Conn) {
 				session.state = Play
 			}
 
+			break
+		case Play:
+			if id == 0x00 {
+				keepAlive := *packet.(*KeepAlive)
+				keepAlive.Read(session)
+				session.SendPacket(&KeepAlive{KeepAliveId: keepAlive.KeepAliveId})
+			} else if id == 0x01 {
+				chatMessage := *packet.(*ClientChatMessage)
+				chatMessage.Read(session)
+				println("Chat: " + chatMessage.Message)
+			}
 			break
 		}
 	}
