@@ -49,13 +49,20 @@ type ServerStatusResponse struct {
 }
 
 func (s ServerStatusResponse) Write(buffer *bytes.Buffer) {
-	statusData, _ := json.Marshal(s.Status)
-	String(statusData).Write(buffer)
+	statusData, err := json.Marshal(s.Status)
+	if err != nil {
+		String(statusData).Write(buffer)
+	} else {
+		String("Error while parasing json").Write(buffer)
+	}
+	
 
 }
 
 func (s *ServerStatusResponse) Read(session Session) {
-	//todo
+	var statusData String;
+	statusData.Read(session);
+	json.Unmarshal([]byte(statusData), s.Status)
 }
 
 func (s ServerStatusResponse) Id() VarInt {

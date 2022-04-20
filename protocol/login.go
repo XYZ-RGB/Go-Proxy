@@ -9,7 +9,7 @@ type ClientLoginStart struct {
 }
 
 func (c ClientLoginStart) Write(buffer *bytes.Buffer) {
-	//todo
+	c.Name.Write(buffer)
 }
 
 func (c *ClientLoginStart) Read(session Session) {
@@ -31,7 +31,8 @@ func (s ServerLoginSuccess) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerLoginSuccess) Read(session Session) {
-	//todo
+	s.Uuid.Read(session)
+	s.Name.Read(session)
 }
 
 func (s ServerLoginSuccess) Id() VarInt {

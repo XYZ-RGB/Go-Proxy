@@ -25,7 +25,12 @@ func (s ServerJoinGame) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerJoinGame) Read(session Session) {
-	//todo
+	s.EntityId.Read(session)
+	s.Gamemode.Read(session)
+	s.Difficulty.Read(session)
+	s.MaxPlayers.Read(session)
+	s.LevelType.Read(session)
+	s.ReducedDebugInfo.Read(session)
 }
 
 func (s ServerJoinGame) Id() VarInt {
@@ -41,7 +46,7 @@ func (s ServerSpawnPosition) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerSpawnPosition) Read(session Session) {
-	//todo
+	s.Location.Read(session)
 }
 
 func (s ServerSpawnPosition) Id() VarInt {
@@ -77,7 +82,20 @@ func (s ServerPlayerAbilities) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerPlayerAbilities) Read(session Session) {
-	//todo
+	var flags Byte;
+	flags.Read(session)
+	if (flags << 0) & 0x1 == 0x1 {
+		s.Invulnerable = true
+	}
+	if (flags << 1) & 0x1 == 0x1 {
+		s.Flying = true
+	}
+	if (flags << 2) & 0x1 == 0x1 {
+		s.AllowFlying = true
+	}
+	if (flags << 3) & 0x1 == 0x1 {
+		s.CreativeMode = true
+	}
 }
 
 func (s ServerPlayerAbilities) Id() VarInt {
@@ -103,7 +121,12 @@ func (s ServerPlayerPosAndLook) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerPlayerPosAndLook) Read(session Session) {
-	//todo
+	s.X.Read(session)
+	s.Y.Read(session)
+	s.Z.Read(session)
+	s.Yaw.Read(session)
+	s.Pitch.Read(session)
+	s.Flags.Read(session)
 }
 
 func (s ServerPlayerPosAndLook) Id() VarInt {
@@ -121,7 +144,8 @@ func (s ServerChatMessage) Write(buffer *bytes.Buffer) {
 }
 
 func (s *ServerChatMessage) Read(session Session) {
-	//todo
+	s.Message.Read(session)
+	s.Position.Read(session)
 }
 
 func (s ServerChatMessage) Id() VarInt {
@@ -133,7 +157,7 @@ type ClientChatMessage struct {
 }
 
 func (c ClientChatMessage) Write(buffer *bytes.Buffer) {
-	//todo
+	c.Message.Write(buffer)
 }
 
 func (c *ClientChatMessage) Read(session Session) {

@@ -12,7 +12,10 @@ type HandshakePacket struct {
 }
 
 func (h HandshakePacket) Write(buffer *bytes.Buffer) {
-	//todo
+	h.ProtocolVersion.Write(buffer)
+	h.ServerAddress.Write(buffer)
+	h.ServerPort.Write(buffer)
+	h.NextState.Write(buffer)
 }
 
 func (h *HandshakePacket) Read(session Session) {
