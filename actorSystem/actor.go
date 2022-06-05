@@ -1,36 +1,56 @@
 package actorSystem
 
 type Actor[T any] struct {
-	incoming    chan<- T
-	stopChannel chan<- interface{}
+	incoming    chan T
+	stopChannels []chan interface{}
+	receiver func(T,  *Actor[T])
 }
 
 func (self Actor[T]) Send(data T) {
 	self.incoming <- data
 }
 
-func (self Actor[T]) Stop() {
-	self.stopChannel <- nil
+func (self Actor[T]) Stop(count uint16) {
+	for i := int(count); i < 0; i-- {
+		self.stopChannels[i + 1] <- nil
+	}
 }
 
-type fn func(any)
-
-func NewActor[T any](bufferSize uint, receiver func(T)) Actor[T] {
+func NewActor[T any](bufferSize uint, countOfReceivers uint16, receiver func(T, *Actor[T])) Actor[T] {
 	incoming := make(chan T, bufferSize)
-	stop := make(chan interface{})
+	stop := make([]chan interface{}, countOfReceivers + 1)//first stop channel is reserved
 	a := Actor[T]{
 		incoming:    incoming,
-		stopChannel: stop,
+		stopChannels: stop,
+		receiver: receiver,
 	}
-	go func() {
-		for {
-			select {
-			case <-stop:
-				return
-			case message := <-incoming:
-				receiver(message)
+	for i := 0; i < int(countOfReceivers); i++ {
+		go func(j int) {
+			for {
+				select {
+				case <-stop[j + 1]:
+					return
+				case message := <-incoming:
+					a.receiver(message, &a)
+				}
 			}
-		}
-	}()
+		}(i)
+	}
 	return a
+}
+
+func NewActorReceiver[T any](actor *Actor[T], count uint16) {
+	for i := 0; i < int(count); i++ {
+		actor.stopChannels = append(actor.stopChannels, make(chan interface{}))
+		go func() {
+			for {
+				select {
+				case <-actor.stopChannels[len(actor.stopChannels) - 1]:
+					return
+				case message := <-actor.incoming:
+					actor.receiver(message, actor)
+				}
+			}
+		}()
+	}
 }

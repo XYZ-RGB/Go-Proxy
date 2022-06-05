@@ -3,7 +3,6 @@ package protocol
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 
@@ -45,7 +44,6 @@ func HandleConnection(conn net.Conn) {
 		reader, id, len, err := getPacket(session)
 		
 		if err != nil {
-			fmt.Println("Closing connection")
 			session.close()
 			break
 

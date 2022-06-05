@@ -51,7 +51,7 @@ type ServerStatusResponse struct {
 
 func (s ServerStatusResponse) Write(buffer *bytes.Buffer) {
 	statusData, err := json.Marshal(s.Status)
-	if err != nil {
+	if err == nil {
 		String(statusData).Write(buffer)
 	} else {
 		String("Error while parasing json").Write(buffer)

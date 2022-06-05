@@ -29,7 +29,7 @@ type ReaderData struct {
 	len int32
 }
 
-func receivePacket(data ReaderData) {
+func receivePacket(data ReaderData, actor *actorSystem.Actor[ReaderData]) {
 	session := data.session
 	id := data.id
 	packet := GetNewPacket(Packets[session.Direction][session.State][VarInt(id)])
@@ -84,6 +84,8 @@ func receivePacket(data ReaderData) {
 					Uuid: String(session.Uuid.String()),
 					Name: login.Name,
 				})
+				session.State = Play
+				actorSystem.NewActorReceiver(actor, 1)
 
 				session.SendPacket(&ServerJoinGame{
 					EntityId:         1,
@@ -125,8 +127,6 @@ func receivePacket(data ReaderData) {
 					},
 					Position: 0,
 				})
-
-				session.State = Play
 			}
 
 			break
@@ -142,5 +142,5 @@ func receivePacket(data ReaderData) {
 }
 
 func newPacketReader() actorSystem.Actor[ReaderData] {
-	return actorSystem.NewActor(0, receivePacket)
+	return actorSystem.NewActor(0, 1, receivePacket)
 }
