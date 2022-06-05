@@ -25,15 +25,20 @@ func (s Session) close() {
 	s.Conn.Close()
 }
 
-func (s Session) SendPacket(packet Packet) {
+func (s Session) SendPacket(packet Packet) error {
 	tempBuf := new(bytes.Buffer)
 	packet.Id().Write(tempBuf)
-	packet.Write(tempBuf)
+	err := packet.Write(tempBuf)
+	if err != nil {
+		//todo error handler
+		return err
+	}
 
 	buf := new(bytes.Buffer)
 	VarInt(tempBuf.Len()).Write(buf)
 	buf.Write(tempBuf.Bytes())
 	s.Writer.Write(buf.Bytes())
+	return nil
 }
 
 func HandleConnection(conn net.Conn) {

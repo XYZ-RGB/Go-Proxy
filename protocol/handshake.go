@@ -12,18 +12,20 @@ type HandshakePacket struct {
 	NextState       VarInt
 }
 
-func (h HandshakePacket) Write(buffer *bytes.Buffer) {
+func (h HandshakePacket) Write(buffer *bytes.Buffer) error {
 	h.ProtocolVersion.Write(buffer)
 	h.ServerAddress.Write(buffer)
 	h.ServerPort.Write(buffer)
 	h.NextState.Write(buffer)
+	return nil
 }
 
-func (h *HandshakePacket) Read(session io.Reader) {
+func (h *HandshakePacket) Read(session io.Reader) error {
 	h.ProtocolVersion.Read(session)
 	h.ServerAddress.Read(session)
 	h.ServerPort.Read(session)
 	h.NextState.Read(session)
+	return nil
 }
 
 func (h HandshakePacket) Id() VarInt {

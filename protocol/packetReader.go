@@ -35,7 +35,9 @@ func receivePacket(data ReaderData, actor *actorSystem.Actor[ReaderData]) {
 	packet := GetNewPacket(Packets[session.Direction][session.State][VarInt(id)])
 	if packet != nil {
 		reader := counterReader{reader: data.reader}
-		packet.Read(&reader)
+		if packet.Read(&reader) != nil {
+			//todo error handler
+		}
 		session := data.session
 		switch session.State {
 		case Handshake:

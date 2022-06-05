@@ -9,12 +9,14 @@ type ClientLoginStart struct {
 	Name String
 }
 
-func (c ClientLoginStart) Write(buffer *bytes.Buffer) {
+func (c ClientLoginStart) Write(buffer *bytes.Buffer) error {
 	c.Name.Write(buffer)
+	return nil
 }
 
-func (c *ClientLoginStart) Read(session io.Reader) {
+func (c *ClientLoginStart) Read(session io.Reader) error {
 	c.Name.Read(session)
+	return nil
 }
 
 func (c ClientLoginStart) Id() VarInt {
@@ -26,14 +28,16 @@ type ServerLoginSuccess struct {
 	Name String
 }
 
-func (s ServerLoginSuccess) Write(buffer *bytes.Buffer) {
+func (s ServerLoginSuccess) Write(buffer *bytes.Buffer) error {
 	s.Uuid.Write(buffer)
 	s.Name.Write(buffer)
+	return nil
 }
 
-func (s *ServerLoginSuccess) Read(session io.Reader) {
+func (s *ServerLoginSuccess) Read(session io.Reader) error {
 	s.Uuid.Read(session)
 	s.Name.Read(session)
+	return nil
 }
 
 func (s ServerLoginSuccess) Id() VarInt {

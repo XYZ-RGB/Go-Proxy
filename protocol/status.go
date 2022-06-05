@@ -9,10 +9,12 @@ import (
 type ClientStatusRequest struct {
 }
 
-func (c ClientStatusRequest) Write(buffer *bytes.Buffer) {
+func (c ClientStatusRequest) Write(buffer *bytes.Buffer) error {
+	return nil
 }
 
-func (c *ClientStatusRequest) Read(session io.Reader) {
+func (c *ClientStatusRequest) Read(session io.Reader) error {
+	return nil
 }
 
 func (c ClientStatusRequest) Id() VarInt {
@@ -49,21 +51,20 @@ type ServerStatusResponse struct {
 	Status StatusData
 }
 
-func (s ServerStatusResponse) Write(buffer *bytes.Buffer) {
+func (s ServerStatusResponse) Write(buffer *bytes.Buffer) error {
 	statusData, err := json.Marshal(s.Status)
 	if err == nil {
 		String(statusData).Write(buffer)
 	} else {
-		String("Error while parasing json").Write(buffer)
+		return err
 	}
-	
-
+	return nil
 }
 
-func (s *ServerStatusResponse) Read(session io.Reader) {
+func (s *ServerStatusResponse) Read(session io.Reader) error {
 	var statusData String;
 	statusData.Read(session);
-	json.Unmarshal([]byte(statusData), s.Status)
+	return json.Unmarshal([]byte(statusData), &s.Status)
 }
 
 func (s ServerStatusResponse) Id() VarInt {

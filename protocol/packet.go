@@ -25,8 +25,8 @@ const (
 var Packets map[ConnectionDirection]map[ConnectionState]map[VarInt]Packet
 
 type Packet interface {
-	Write(buffer *bytes.Buffer)
-	Read(session io.Reader)
+	Write(buffer *bytes.Buffer) error
+	Read(session io.Reader) error
 	Id() VarInt
 }
 
