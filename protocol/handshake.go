@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"io"
 )
 
 type HandshakePacket struct {
@@ -18,7 +19,7 @@ func (h HandshakePacket) Write(buffer *bytes.Buffer) {
 	h.NextState.Write(buffer)
 }
 
-func (h *HandshakePacket) Read(session Session) {
+func (h *HandshakePacket) Read(session io.Reader) {
 	h.ProtocolVersion.Read(session)
 	h.ServerAddress.Read(session)
 	h.ServerPort.Read(session)

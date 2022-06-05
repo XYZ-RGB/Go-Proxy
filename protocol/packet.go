@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"io"
 	"reflect"
 )
 
@@ -25,7 +26,7 @@ var Packets map[ConnectionDirection]map[ConnectionState]map[VarInt]Packet
 
 type Packet interface {
 	Write(buffer *bytes.Buffer)
-	Read(session Session)
+	Read(session io.Reader)
 	Id() VarInt
 }
 

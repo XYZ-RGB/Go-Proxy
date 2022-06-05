@@ -2,9 +2,12 @@ package protocol
 
 import (
 	"bytes"
-	"github.com/google/uuid"
+	"errors"
+	"fmt"
 	"io"
 	"net"
+
+	"github.com/google/uuid"
 )
 
 var Sessions = make(map[string]*Session)
@@ -37,141 +40,44 @@ func (s Session) SendPacket(packet Packet) {
 func HandleConnection(conn net.Conn) {
 	session := Session{conn, conn, conn, Handshake, Serverbound, uuid.New()}
 	Sessions[session.Uuid.String()] = &session
+	packetReader := newPacketReader()
 	for {
-		packet, id, len := getPacket(session)
-		if packet == nil { //todo
-			if session.State != Play {
-				session.close()
-				break
-			}
-
-			if len-1 <= 0 {
-				continue
-			}
-
-			buf := make([]byte, len-1)
-			_, err := io.ReadFull(session.Reader, buf[:])
-			if err != nil {
-				session.close()
-				break
-			}
-		}
-
-		switch session.State {
-		case Handshake:
-			if id == 0x00 {
-				handshake := *packet.(*HandshakePacket)
-				handshake.Read(session)
-
-				if handshake.ProtocolVersion != 47 && handshake.NextState == 2 {
-					println("Wrong protocol version: ", handshake.ProtocolVersion)
-					session.close()
-					break
-				}
-
-				if handshake.NextState == 1 {
-					session.State = Status
-				} else {
-					session.State = Login
-				}
-			}
+		reader, id, len, err := getPacket(session)
+		
+		if err != nil {
+			fmt.Println("Closing connection")
+			session.close()
 			break
-		case Status:
-			if id == 0x00 {
-				println("Status")
-				status := StatusData{
-					Version: VersionStatusData{
-						Name:     "123",
-						Protocol: 0,
-					},
-					Players: PlayersStatusData{
-						Max:    0,
-						Online: 0,
-						Sample: []PlayerDataStatus{},
-					},
-					Description: DescriptionStatusData{
-						Text: "AAAAA",
-					},
-				}
 
-				session.SendPacket(&ServerStatusResponse{Status: status})
-			}
-			break
-		case Login:
-			if id == 0x00 {
-				login := *packet.(*ClientLoginStart)
-				login.Read(session)
-				println("Nick: " + login.Name)
-				session.SendPacket(&ServerLoginSuccess{
-					Uuid: String(session.Uuid.String()),
-					Name: login.Name,
-				})
-
-				session.SendPacket(&ServerJoinGame{
-					EntityId:         1,
-					Gamemode:         1,
-					Dimension:        0,
-					Difficulty:       0,
-					MaxPlayers:       2,
-					LevelType:        "default",
-					ReducedDebugInfo: false,
-				})
-
-				session.SendPacket(&ServerSpawnPosition{Location: Position{
-					X: 0,
-					Y: 0,
-					Z: 0,
-				}})
-
-				session.SendPacket(&ServerPlayerAbilities{
-					Invulnerable: false,
-					Flying:       true,
-					AllowFlying:  true,
-					CreativeMode: false,
-					FlyingSpeed:  0,
-					WalkingSpeed: 0,
-				})
-
-				session.SendPacket(&ServerPlayerPosAndLook{
-					X:     0,
-					Y:     0,
-					Z:     0,
-					Yaw:   0,
-					Pitch: 0,
-					Flags: 0,
-				})
-
-				session.SendPacket(&ServerChatMessage{
-					Message: Msg{
-						Text: "§aHello, world!",
-					},
-					Position: 0,
-				})
-
-				session.State = Play
-			}
-
-			break
-		case Play:
-			if id == 0x01 {
-				chatMessage := *packet.(*ClientChatMessage)
-				chatMessage.Read(session)
-				println("Chat: " + chatMessage.Message)
-			}
-			break
+			// if len-1 <= 0 {
+			// 	continue
+			// }
+			
+			// buf := make([]byte, len-1)
+			// _, err := io.ReadFull(session.Reader, buf[:])
+			// if err != nil {
+			// 	session.close()
+			// 	break
+			// }
+		} else {
+			packetReader.Send(ReaderData{&session, reader, int32(id), int32(len)})
 		}
 	}
 }
 
-func getPacket(session Session) (Packet, VarInt, VarInt) {
+func getPacket(session Session) (io.Reader, VarInt, VarInt, error) {
 	var packetLen VarInt
-	packetLen.Read(session)
+	packetLen.Read(session.Reader)
 	if packetLen == 0 {
-		return nil, 0, packetLen
+		return nil, 0, packetLen, errors.New("packetLen is 0")
 	}
 
 	var packetId VarInt
-	packetId.Read(session)
+	packetIdLen := int(packetId.Read(session.Reader))
+	
+	buf := make([]byte, (int(packetLen) - packetIdLen))
+	io.ReadFull(session.Reader, buf)
+	reader := bytes.NewReader(buf)
 
-	return GetNewPacket(Packets[session.Direction][session.State][packetId]), packetId, packetLen
+	return reader, packetId, VarInt(len(buf)), nil
 }

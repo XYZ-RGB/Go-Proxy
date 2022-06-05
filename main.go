@@ -2,6 +2,7 @@ package main
 
 import (
 	"Proxy/protocol"
+	"fmt"
 	"net"
 	"time"
 )
@@ -33,6 +34,7 @@ func main() {
 
 	listen, err := net.Listen("tcp", ":25565")
 	if err != nil {
+		fmt.Printf("Error while creating server: %s\nAborting.\n", err)
 		return
 	}
 

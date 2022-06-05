@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 )
 
 type ClientStatusRequest struct {
@@ -11,7 +12,7 @@ type ClientStatusRequest struct {
 func (c ClientStatusRequest) Write(buffer *bytes.Buffer) {
 }
 
-func (c *ClientStatusRequest) Read(session Session) {
+func (c *ClientStatusRequest) Read(session io.Reader) {
 }
 
 func (c ClientStatusRequest) Id() VarInt {
@@ -59,7 +60,7 @@ func (s ServerStatusResponse) Write(buffer *bytes.Buffer) {
 
 }
 
-func (s *ServerStatusResponse) Read(session Session) {
+func (s *ServerStatusResponse) Read(session io.Reader) {
 	var statusData String;
 	statusData.Read(session);
 	json.Unmarshal([]byte(statusData), s.Status)

@@ -25,7 +25,7 @@ type (
 	Msg chat.Message
 )
 
-func (b *Boolean) Read(session Session) {
+func (b *Boolean) Read(session io.Reader) {
 	var buff Byte
 	buff.Read(session)
 	*b = Boolean(buff != 0)
@@ -39,9 +39,9 @@ func (b Boolean) Write(writer io.Writer) {
 	buff.Write(writer)
 }
 
-func (b *Byte) Read(session Session) {
+func (b *Byte) Read(session io.Reader) {
 	var buf [1]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*b = Byte(buf[0])
 }
 
@@ -49,9 +49,9 @@ func (b Byte) Write(writer io.Writer) {
 	writer.Write([]byte{byte(b)})
 }
 
-func (u *UnsignedByte) Read(session Session) {
+func (u *UnsignedByte) Read(session io.Reader) {
 	var buf [1]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*u = UnsignedByte(buf[0])
 }
 
@@ -59,9 +59,9 @@ func (u UnsignedByte) Write(writer io.Writer) {
 	writer.Write([]byte{byte(u)})
 }
 
-func (s *Short) Read(session Session) {
+func (s *Short) Read(session io.Reader) {
 	var buf [2]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*s = Short(int16(buf[0])<<8 | int16(buf[1]))
 }
 
@@ -69,9 +69,9 @@ func (s Short) Write(writer io.Writer) {
 	writer.Write([]byte{byte(s >> 8), byte(s)})
 }
 
-func (u *UnsignedShort) Read(session Session) {
+func (u *UnsignedShort) Read(session io.Reader) {
 	var buf [2]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*u = UnsignedShort(uint16(buf[0])<<8 | uint16(buf[1]))
 }
 
@@ -79,9 +79,9 @@ func (u UnsignedShort) Write(writer io.Writer) {
 	writer.Write([]byte{byte(u >> 8), byte(u)})
 }
 
-func (i *Int) Read(session Session) {
+func (i *Int) Read(session io.Reader) {
 	var buf [4]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*i = Int(int32(buf[0])<<24 | int32(buf[1])<<16 | int32(buf[2])<<8 | int32(buf[3]))
 }
 
@@ -89,9 +89,9 @@ func (i Int) Write(writer io.Writer) {
 	writer.Write([]byte{byte(i >> 24), byte(i >> 16), byte(i >> 8), byte(i)})
 }
 
-func (l *Long) Read(session Session) {
+func (l *Long) Read(session io.Reader) {
 	var buf [8]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*l = Long(int64(buf[0])<<56 | int64(buf[1])<<48 | int64(buf[2])<<40 | int64(buf[3])<<32 | int64(buf[4])<<24 | int64(buf[5])<<16 | int64(buf[6])<<8 | int64(buf[7]))
 }
 
@@ -99,9 +99,9 @@ func (l Long) Write(writer io.Writer) {
 	writer.Write([]byte{byte(l >> 56), byte(l >> 48), byte(l >> 40), byte(l >> 32), byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)})
 }
 
-func (f *Float) Read(session Session) {
+func (f *Float) Read(session io.Reader) {
 	var buf [4]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*f = Float(math.Float32frombits(uint32(buf[0])<<24 | uint32(buf[1])<<16 | uint32(buf[2])<<8 | uint32(buf[3])))
 }
 
@@ -111,9 +111,9 @@ func (f Float) Write(writer io.Writer) {
 	buf.Write(writer)
 }
 
-func (d *Double) Read(session Session) {
+func (d *Double) Read(session io.Reader) {
 	var buf [8]byte
-	_, _ = io.ReadFull(session.Reader, buf[:])
+	_, _ = io.ReadFull(session, buf[:])
 	*d = Double(math.Float64frombits(uint64(buf[0])<<56 | uint64(buf[1])<<48 | uint64(buf[2])<<40 | uint64(buf[3])<<32 |
 		uint64(buf[4])<<24 | uint64(buf[5])<<16 | uint64(buf[6])<<8 | uint64(buf[7])))
 }
@@ -124,11 +124,11 @@ func (d Double) Write(writer io.Writer) {
 	buf.Write(writer)
 }
 
-func (s *String) Read(session Session) {
+func (s *String) Read(session io.Reader) {
 	var length VarInt
 	length.Read(session)
 	var buf = make([]byte, length)
-	_, _ = io.ReadFull(session.Reader, buf)
+	_, _ = io.ReadFull(session, buf)
 	*s = String(buf)
 }
 
@@ -139,27 +139,28 @@ func (s String) Write(writer io.Writer) {
 	writer.Write([]byte(s))
 }
 
-func (i *VarInt) Read(session Session) {
+func (i *VarInt) Read(session io.Reader) int32 {
 	var value int32
 	var pos int32
 	var currentByte byte
 	for {
 		var buf [1]byte
-		_, _ = io.ReadFull(session.Reader, buf[:])
+		_, _ = io.ReadFull(session, buf[:])
 		currentByte = buf[0]
 
-		value |= int32(currentByte&0x7F) << pos
+		value |= int32(currentByte&0x7F) << (pos * 7)
 		if (currentByte & 0x80) == 0 {
 			break
 		}
-		pos += 7
+		pos += 1
 
-		if pos >= 32 {
+		if pos >= 5 {
 			break
 		}
 	}
 
 	*i = VarInt(value)
+	return pos + 1
 }
 
 func (i VarInt) Write(writer io.Writer) {
@@ -178,13 +179,13 @@ func (i VarInt) Write(writer io.Writer) {
 	}
 }
 
-func (l *VarLong) Read(session Session) {
+func (l *VarLong) Read(session io.Reader) {
 	var value int64
 	var pos int32
 	var currentByte byte
 	for {
 		var buf [1]byte
-		_, _ = io.ReadFull(session.Reader, buf[:])
+		_, _ = io.ReadFull(session, buf[:])
 		currentByte = buf[0]
 
 		value |= int64(currentByte&0x7F) << pos
@@ -216,7 +217,7 @@ func (l VarLong) Write(writer io.Writer) {
 	}
 }
 
-func (p *Position) Read(session Session) {
+func (p *Position) Read(session io.Reader) {
 	var encoded Long
 	encoded.Read(session)
 	x := int(encoded >> 38)
@@ -250,7 +251,7 @@ func (p Position) Write(writer io.Writer) {
 	}
 }
 
-func (m *Msg) Read(session Session) {
+func (m *Msg) Read(session io.Reader) {
 	var str String
 	str.Read(session)
 

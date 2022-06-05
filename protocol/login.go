@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"io"
 )
 
 type ClientLoginStart struct {
@@ -12,7 +13,7 @@ func (c ClientLoginStart) Write(buffer *bytes.Buffer) {
 	c.Name.Write(buffer)
 }
 
-func (c *ClientLoginStart) Read(session Session) {
+func (c *ClientLoginStart) Read(session io.Reader) {
 	c.Name.Read(session)
 }
 
@@ -30,7 +31,7 @@ func (s ServerLoginSuccess) Write(buffer *bytes.Buffer) {
 	s.Name.Write(buffer)
 }
 
-func (s *ServerLoginSuccess) Read(session Session) {
+func (s *ServerLoginSuccess) Read(session io.Reader) {
 	s.Uuid.Read(session)
 	s.Name.Read(session)
 }

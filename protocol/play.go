@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"io"
 )
 
 type ServerJoinGame struct {
@@ -24,7 +25,7 @@ func (s ServerJoinGame) Write(buffer *bytes.Buffer) {
 	s.ReducedDebugInfo.Write(buffer)
 }
 
-func (s *ServerJoinGame) Read(session Session) {
+func (s *ServerJoinGame) Read(session io.Reader) {
 	s.EntityId.Read(session)
 	s.Gamemode.Read(session)
 	s.Difficulty.Read(session)
@@ -45,7 +46,7 @@ func (s ServerSpawnPosition) Write(buffer *bytes.Buffer) {
 	s.Location.Write(buffer)
 }
 
-func (s *ServerSpawnPosition) Read(session Session) {
+func (s *ServerSpawnPosition) Read(session io.Reader) {
 	s.Location.Read(session)
 }
 
@@ -81,7 +82,7 @@ func (s ServerPlayerAbilities) Write(buffer *bytes.Buffer) {
 	s.WalkingSpeed.Write(buffer)
 }
 
-func (s *ServerPlayerAbilities) Read(session Session) {
+func (s *ServerPlayerAbilities) Read(session io.Reader) {
 	var flags Byte;
 	flags.Read(session)
 	if (flags << 0) & 0x1 == 0x1 {
@@ -120,7 +121,7 @@ func (s ServerPlayerPosAndLook) Write(buffer *bytes.Buffer) {
 	s.Flags.Write(buffer)
 }
 
-func (s *ServerPlayerPosAndLook) Read(session Session) {
+func (s *ServerPlayerPosAndLook) Read(session io.Reader) {
 	s.X.Read(session)
 	s.Y.Read(session)
 	s.Z.Read(session)
@@ -143,7 +144,7 @@ func (s ServerChatMessage) Write(buffer *bytes.Buffer) {
 	s.Position.Write(buffer)
 }
 
-func (s *ServerChatMessage) Read(session Session) {
+func (s *ServerChatMessage) Read(session io.Reader) {
 	s.Message.Read(session)
 	s.Position.Read(session)
 }
@@ -160,7 +161,7 @@ func (c ClientChatMessage) Write(buffer *bytes.Buffer) {
 	c.Message.Write(buffer)
 }
 
-func (c *ClientChatMessage) Read(session Session) {
+func (c *ClientChatMessage) Read(session io.Reader) {
 	c.Message.Read(session)
 }
 
@@ -176,7 +177,7 @@ func (k KeepAlive) Write(buffer *bytes.Buffer) {
 	k.KeepAliveId.Write(buffer)
 }
 
-func (k *KeepAlive) Read(session Session) {
+func (k *KeepAlive) Read(session io.Reader) {
 	k.KeepAliveId.Read(session)
 }
 
